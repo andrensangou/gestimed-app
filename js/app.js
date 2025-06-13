@@ -264,6 +264,15 @@ function initEvents() {
             sendChatMessage();
         }
     });
+    
+    // Gestion du lien Rappels
+    const rappelsLink = document.querySelector('nav ul li:nth-child(2) a');
+    if (rappelsLink) {
+        rappelsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            showRemindersView();
+        });
+    }
 }
 
 // Mise à jour de la liste des médicaments
@@ -1425,6 +1434,299 @@ function showNotification(message, isError = false) {
             }
         }, 300);
     }, 4000);
+}
+
+// Fonction pour afficher la vue des rappels
+function showRemindersView() {
+    // Créer ou récupérer le modal des rappels
+    let remindersModal = document.getElementById('reminders-modal');
+    
+    if (!remindersModal) {
+        // Créer le modal s'il n'existe pas
+        remindersModal = document.createElement('div');
+        remindersModal.id = 'reminders-modal';
+        remindersModal.className = 'modal';
+        remindersModal.innerHTML = `
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2><i class="fas fa-bell"></i> Gestion des Rappels</h2>
+                <div id="reminders-content">
+                    <!-- Le contenu sera généré dynamiquement -->
+                </div>
+            </div>
+        `;
+        document.body.appendChild(remindersModal);
+        
+        // Ajouter l'événement de fermeture
+        remindersModal.querySelector('.close').addEventListener('click', () => {
+            remindersModal.classList.remove('active');
+        });
+    }
+    
+    // Générer le contenu des rappels
+    generateRemindersContent();
+    
+    // Afficher le modal
+    remindersModal.classList.add('active');
+}
+
+// Fonction pour générer le contenu des rappels
+function generateRemindersContent() {
+    const remindersContent = document.getElementById('reminders-content');
+    
+    if (userData.reminders.length === 0) {
+        remindersContent.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-bell-slash" style="font-size: 48px; color: #ccc; margin-bottom: 16px;"></i>
+                <p>Aucun rappel configuré</p>
+                <p style="color: #666; font-size: 14px;">Les rappels sont créés automatiquement lorsque vous ajoutez des médicaments avec des horaires.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Trier les rappels par date/heure
+    const sortedReminders = userData.reminders.sort((a, b) => {
+        return new Date(a.next_reminder) - new Date(b.next_reminder);
+    });
+    
+    let html = '<div class="reminders-list">';
+    
+    sortedReminders.forEach(reminder => {
+        const nextDate = new Date(reminder.next_reminder);
+        const now = new Date();
+        const isOverdue = nextDate < now;
+        const isToday = nextDate.toDateString() === now.toDateString();
+        
+        const timeString = nextDate.toLocaleTimeString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        const dateString = nextDate.toLocaleDateString('fr-FR', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long'
+        });
+        
+        const statusClass = isOverdue ? 'overdue' : isToday ? 'today' : 'upcoming';
+        const statusIcon = isOverdue ? 'fa-exclamation-triangle' : isToday ? 'fa-clock' : 'fa-calendar';
+        const statusText = isOverdue ? 'En retard' : isToday ? 'Aujourd\'hui' : 'À venir';
+        
+        html += `
+            <div class="reminder-item ${statusClass}">
+                <div class="reminder-header">
+                    <div class="reminder-medication">
+                        <i class="fas fa-pills"></i>
+                        <strong>${reminder.medication}</strong>
+                        ${reminder.familyMember && reminder.familyMember !== 'user' ? `<span class="family-member">(${reminder.familyMember})</span>` : ''}
+                    </div>
+                    <div class="reminder-status">
+                        <i class="fas ${statusIcon}"></i>
+                        <span>${statusText}</span>
+                    </div>
+                </div>
+                <div class="reminder-details">
+                    <div class="reminder-time">
+                        <i class="fas fa-clock"></i>
+                        ${timeString}
+                    </div>
+                    <div class="reminder-date">
+                        <i class="fas fa-calendar"></i>
+                        ${dateString}
+                    </div>
+                    <div class="reminder-dosage">
+                        <i class="fas fa-prescription-bottle"></i>
+                        ${reminder.dosage}
+                    </div>
+                </div>
+                <div class="reminder-actions">
+                    <button class="btn-small btn-success" onclick="markReminderTaken('${reminder.id}')">
+                        <i class="fas fa-check"></i> Marquer comme pris
+                    </button>
+                    <button class="btn-small btn-warning" onclick="snoozeReminder('${reminder.id}')">
+                        <i class="fas fa-clock"></i> Reporter (15min)
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    // Ajouter des styles CSS pour les rappels
+    if (!document.getElementById('reminders-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'reminders-styles';
+        styles.textContent = `
+            .reminders-list {
+                max-height: 500px;
+                overflow-y: auto;
+            }
+            
+            .reminder-item {
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                padding: 16px;
+                margin-bottom: 12px;
+                background: white;
+            }
+            
+            .reminder-item.overdue {
+                border-left: 4px solid #ff4757;
+                background: #fff5f5;
+            }
+            
+            .reminder-item.today {
+                border-left: 4px solid #ffa502;
+                background: #fffbf0;
+            }
+            
+            .reminder-item.upcoming {
+                border-left: 4px solid #2ed573;
+                background: #f0fff4;
+            }
+            
+            .reminder-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+            
+            .reminder-medication {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .family-member {
+                color: #666;
+                font-size: 12px;
+                font-weight: normal;
+            }
+            
+            .reminder-status {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-size: 12px;
+                font-weight: bold;
+            }
+            
+            .reminder-status.overdue {
+                color: #ff4757;
+            }
+            
+            .reminder-status.today {
+                color: #ffa502;
+            }
+            
+            .reminder-status.upcoming {
+                color: #2ed573;
+            }
+            
+            .reminder-details {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 8px;
+                margin-bottom: 12px;
+                font-size: 14px;
+                color: #666;
+            }
+            
+            .reminder-details > div {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            
+            .reminder-actions {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            
+            .btn-small {
+                padding: 6px 12px;
+                font-size: 12px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                transition: all 0.2s;
+            }
+            
+            .btn-success {
+                background: #2ed573;
+                color: white;
+            }
+            
+            .btn-success:hover {
+                background: #26d065;
+            }
+            
+            .btn-warning {
+                background: #ffa502;
+                color: white;
+            }
+            
+            .btn-warning:hover {
+                background: #ff9500;
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    remindersContent.innerHTML = html;
+}
+
+// Fonction pour marquer un rappel comme pris
+function markReminderTaken(reminderId) {
+    const reminder = userData.reminders.find(r => r.id === reminderId);
+    if (!reminder) return;
+    
+    // Ajouter à l'historique
+    const historyEntry = {
+        id: generateId(),
+        medication: reminder.medication,
+        dosage: reminder.dosage,
+        date: new Date().toISOString(),
+        familyMember: reminder.familyMember || 'user'
+    };
+    
+    userData.history.push(historyEntry);
+    
+    // Calculer le prochain rappel
+    const nextReminder = calculateNextReminder(reminder);
+    reminder.next_reminder = nextReminder;
+    
+    // Sauvegarder et mettre à jour l'affichage
+    saveUserData();
+    generateRemindersContent();
+    updateDashboard();
+    
+    showNotification(`Prise de ${reminder.medication} enregistrée !`);
+}
+
+// Fonction pour reporter un rappel
+function snoozeReminder(reminderId) {
+    const reminder = userData.reminders.find(r => r.id === reminderId);
+    if (!reminder) return;
+    
+    // Reporter de 15 minutes
+    const currentTime = new Date(reminder.next_reminder);
+    currentTime.setMinutes(currentTime.getMinutes() + 15);
+    reminder.next_reminder = currentTime.toISOString();
+    
+    // Sauvegarder et mettre à jour l'affichage
+    saveUserData();
+    generateRemindersContent();
+    updateDashboard();
+    
+    showNotification(`Rappel reporté de 15 minutes`);
 }
 
 // Initialiser l'application au chargement de la page
