@@ -22,6 +22,11 @@ function generateUserId() {
     return newId;
 }
 
+// Détection de la langue du navigateur et mise à jour des paramètres utilisateur
+const userLang = navigator.language || navigator.userLanguage;
+userData.settings.language = userLang.split('-')[0]; // Utiliser uniquement le code de langue principal
+console.log("Langue détectée :", userData.settings.language);
+
 // Initialisation de l'application
 function initApp() {
     // Charger les données utilisateur
