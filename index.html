@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Gestionnaire de Médicaments</title>
+    <link rel="icon" href="medifavicon.png" type="image/png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <img src="medilogo.png" alt="Logo Médicaments" class="logo-image">
+                <h1>Mon Gestionnaire de Médicaments</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li class="active"><a href="#"><i class="fas fa-pills"></i> Mes médicaments</a></li>
+                    <li><a href="#"><i class="fas fa-bell"></i> Rappels</a></li>
+                    <li><a href="#"><i class="fas fa-history"></i> Historique</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h2>Mes médicaments</h2>
+                <div id="medication-list" class="med-cards">
+                    <!-- Contenu dynamique via JavaScript -->
+                </div>
+                <button id="add-med-btn" class="btn primary"><i class="fas fa-plus"></i> Ajouter un médicament</button>
+                
+                <div class="advanced-features">
+                    <h3>Fonctionnalités avancées</h3>
+                    <button id="stats-btn" class="btn secondary"><i class="fas fa-chart-bar"></i> Statistiques</button>
+                    <button id="export-btn" class="btn secondary"><i class="fas fa-download"></i> Exporter</button>
+                    <button id="sync-btn" class="btn secondary"><i class="fas fa-sync"></i> Synchroniser</button>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <h2><i class="fas fa-comment-medical"></i> Assistant Santé</h2>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message assistant">
+                            <div class="message-content">
+                                <p>Bonjour ! Je suis votre assistant santé. Comment puis-je vous aider aujourd'hui ?</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input">
+                        <input type="text" id="user-message" placeholder="Posez une question sur vos médicaments...">
+                        <button id="send-message"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+
+                <div class="timeline-container">
+                    <h2>Prochains rappels</h2>
+                    <div class="timeline" id="reminders-timeline">
+                        <!-- Contenu dynamique via JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal d'ajout de médicament -->
+        <div id="add-med-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Ajouter un médicament</h2>
+                <form id="add-medication-form">
+                    <div class="form-group">
+                        <label for="med-name">Nom du médicament*</label>
+                        <input type="text" id="med-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="med-dosage">Dosage*</label>
+                        <input type="text" id="med-dosage" placeholder="Ex: 500mg" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="med-form">Forme</label>
+                        <select id="med-form">
+                            <option value="comprimé">Comprimé</option>
+                            <option value="gélule">Gélule</option>
+                            <option value="sirop">Sirop</option>
+                            <option value="injection">Injection</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="med-quantity">Quantité en stock*</label>
+                        <input type="number" id="med-quantity" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="med-threshold">Seuil d'alerte</label>
+                        <input type="number" id="med-threshold" min="0" value="5">
+                        <small>Vous serez alerté lorsque le stock sera inférieur à cette valeur</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Fréquence de prise*</label>
+                        <div class="frequency-options">
+                            <label><input type="radio" name="frequency" value="daily" checked> Quotidien</label>
+                            <label><input type="radio" name="frequency" value="weekly"> Hebdomadaire</label>
+                            <label><input type="radio" name="frequency" value="monthly"> Mensuel</label>
+                            <label><input type="radio" name="frequency" value="as-needed"> Si besoin</label>
+                        </div>
+                    </div>
+                    <div id="daily-options" class="frequency-detail">
+                        <label>Horaires de prise</label>
+                        <div id="time-slots">
+                            <div class="time-slot">
+                                <input type="time" class="time-input">
+                                <button type="button" class="remove-time"><i class="fas fa-minus-circle"></i></button>
+                            </div>
+                        </div>
+                        <button type="button" id="add-time"><i class="fas fa-plus"></i> Ajouter un horaire</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="med-family-member">Membre de la famille</label>
+                        <select id="med-family-member">
+                            <option value="user">Moi-même</option>
+                            <option value="conjoint">Conjoint(e)</option>
+                            <option value="enfant1">Enfant 1</option>
+                            <option value="enfant2">Enfant 2</option>
+                            <option value="parent">Parent</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="med-notes">Notes / Instructions</label>
+                        <textarea id="med-notes" placeholder="Ex: Prendre avec de la nourriture"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn primary">Ajouter</button>
+                        <button type="reset" class="btn secondary">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal d'édition de médicament -->
+        <div id="edit-med-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Modifier le médicament</h2>
+                <form id="edit-medication-form">
+                    <div class="form-group">
+                        <label for="edit-med-name">Nom du médicament*</label>
+                        <input type="text" id="edit-med-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-med-dosage">Dosage*</label>
+                        <input type="text" id="edit-med-dosage" placeholder="Ex: 500mg" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-med-form">Forme</label>
+                        <select id="edit-med-form">
+                            <option value="comprimé">Comprimé</option>
+                            <option value="gélule">Gélule</option>
+                            <option value="sirop">Sirop</option>
+                            <option value="injection">Injection</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-med-quantity">Quantité en stock*</label>
+                        <input type="number" id="edit-med-quantity" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-med-threshold">Seuil d'alerte</label>
+                        <input type="number" id="edit-med-threshold" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-med-family-member">Membre de la famille</label>
+                        <select id="edit-med-family-member">
+                            <option value="user">Moi-même</option>
+                            <option value="conjoint">Conjoint(e)</option>
+                            <option value="enfant1">Enfant 1</option>
+                            <option value="enfant2">Enfant 2</option>
+                            <option value="parent">Parent</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Horaires de prise</label>
+                        <div id="edit-time-slots">
+                            <!-- Horaires dynamiques -->
+                        </div>
+                        <button type="button" onclick="addEditTimeSlot()"><i class="fas fa-plus"></i> Ajouter un horaire</button>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn primary">Sauvegarder</button>
+                        <button type="button" class="btn secondary" onclick="document.getElementById('edit-med-modal').classList.remove('active')">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal des statistiques -->
+        <div id="stats-modal" class="modal">
+            <div class="modal-content large">
+                <span class="close">&times;</span>
+                <h2><i class="fas fa-chart-bar"></i> Statistiques de prise</h2>
+                <div id="stats-content">
+                    <!-- Contenu généré dynamiquement -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification de rappel -->
+        <div id="reminder-notification" class="notification hidden">
+            <div class="notification-content">
+                <h3><i class="fas fa-bell"></i> Rappel de médicament</h3>
+                <p id="notification-message"></p>
+                <div class="notification-actions">
+                    <button id="take-med" class="btn primary">J'ai pris</button>
+                    <button id="snooze-med" class="btn secondary">Rappeler dans 15min</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pied de page -->
+    <footer class="app-footer">
+        <div class="footer-content">
+            <p>&copy; 2024 GestiMed - Votre assistant personnel pour la gestion des médicaments familiale</p>
+            <a href="guide_utilisateur.html" target="_blank" class="guide-link">
+                <i class="fas fa-book"></i> Guide utilisateur
+            </a>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
