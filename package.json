@@ -1,0 +1,15 @@
+{
+  "name": "gestimed",
+  "version": "1.0.0",
+  "description": "Application de gestion de médicaments personnels et familiaux",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'Static site - no build required' && exit 0",
+    "start": "echo 'Static site - open index.html in browser' && exit 0"
+  },
+  "keywords": ["medication", "health", "reminder", "family"],
+  "author": "GestiMed",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}
